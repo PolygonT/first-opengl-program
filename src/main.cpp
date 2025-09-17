@@ -4,7 +4,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <iostream>
-#include <thread>
 
 #include "Macros.h"
 #include "VertexBuffer.h"
@@ -14,10 +13,14 @@
 #include "Renderer.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "Camera.h"
 
 int main(void)
 {
     GLFWwindow* window;
+
+    int width {1280}, height {960};
+
 
     /* Initialize the library */
     if (!glfwInit())
@@ -28,7 +31,7 @@ int main(void)
     // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(1280, 960, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -48,17 +51,21 @@ int main(void)
     std::cout << glGetString(GL_VERSION) << std::endl;
 
     float positions[] {
-        -0.5f, -0.5f, 0.f , 1.f, 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, // 0
-        0.5f , -0.5f, 0.f , 1.f, 1.f, 0.f, 0.f, 1.f, 0.f, 1.f, // 1
-        0.5f , 0.5f , 0.f , 1.f, 1.f, 1.f, 0.f, 0.f, 1.f, 1.f, // 2
-        -0.5f, -0.5f, 0.5f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f // 3
+        //     COORDS          /         TexCoords      /       Colors
+        -0.5f, 0.0f, -0.5f, 1.0f,       0.0f, 0.0f,         1.0f, 0.0f, 0.0f, 1.0f,
+        -0.5f, 0.0f,  0.5f, 1.0f,       5.0f, 0.0f,         0.0f, 1.0f, 0.0f, 1.0f,
+         0.5f, 0.0f,  0.5f, 1.0f,       0.0f, 0.0f,         0.0f, 0.0f, 1.0f, 1.0f,
+         0.5f, 0.0f, -0.5f, 1.0f,       5.0f, 0.0f,         0.3f, 0.8f, 0.2f, 1.0f,
+         0.0f, 0.8f,  0.0f, 1.0f,       2.5f, 5.0f,         1.0f, 1.0f, 1.0f, 1.0f
     };
 
     unsigned int indicies[] {
         0, 1, 2,
-        0, 1, 3,
         0, 2, 3,
-        1, 2, 3
+        0, 1, 4,
+        1, 2, 4,
+        2, 3, 4,
+        0, 3, 4
     };
 
     // blend mode
@@ -66,8 +73,8 @@ int main(void)
     GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     VertexArray va;
-    VertexBuffer vb {positions, 10 * 4 * sizeof(float)};
-    IndexBuffer ib {indicies, 4 * 3};
+    VertexBuffer vb {positions, 10 * 5 * sizeof(float)};
+    IndexBuffer ib {indicies, 6 * 3};
 
     VertexBufferLayout layout;
     // vertices
@@ -81,12 +88,13 @@ int main(void)
     Shader shader { "res/shaders/Basic.shader" };
     shader.Bind();
 
-    Texture texture { "res/textures/test1.png" };
+    Texture texture { "res/textures/brick.png" };
     texture.Bind();
     
     shader.SetUniform1i("u_Texture", 0);
 
     Renderer renderer;
+    Camera camera {width, height, {0.0f, 0.2f, 2.0f}};
 
     va.UnBind();
     shader.UnBind();
@@ -99,6 +107,7 @@ int main(void)
     double lastFrameTime = glfwGetTime();
     float targetFPS = 10.f;
     float targetSecPerFrame = 1.f / targetFPS;
+
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -114,30 +123,22 @@ int main(void)
         shader.Bind();
 
         std::cout << 1.f / deltaSeconds << std::endl;
-        glm::mat4 model = 
-            glm::translate(glm::mat4(1.f), glm::vec3(0.0f, 0.f, 1.1f)) *
-            // glm::scale(glm::mat4(1.f), glm::vec3(1.5f, 1.5f, 1.5f)) * 
-            glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0.f, 1.f, 0.f));
-        glm::mat4 view = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, 0.f));
-        // glm::mat4 projection = glm::ortho(-1.f, 1.f, -1.f, 1.f, -1.f, 1.f);
-        glm::mat4 projection = glm::perspective(45.f, 16.f/9.f, -1.f, 1.f);
-        glm::mat4 mvp = projection * view * model;
+
+        // glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 model(1.f);
+        
+        camera.HandleInputs(window, deltaSeconds);
+        glm::mat4 camMatrix = camera.camMatrix(glm::radians(45.f), 0.1f, 100.f, shader);
+        glm::mat4 mvp = camMatrix * model;
+        
         angle += 10.f * deltaSeconds;
 
-        shader.SetUniformMat4f("u_Mvp", model);
-        // std::cout << deltaSeconds << std::endl;
+        shader.SetUniformMat4f("u_Mvp", mvp);
         if (angle >= 360.f) {
             angle = 0.f;
         }
-        // shader.SetUniform4f("u_Color", red, 0.3f, 0.8f, 1.f);
 
         renderer.Draw(va, ib, shader);
-        // va.Bind();
-        // ib.Bind();
-
-        // glDrawArrays(GL_TRIANGLES, 0, 6);
-        // GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
-//
 
         /* Swap front and back buffers */
         GLCall(glfwSwapBuffers(window));

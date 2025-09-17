@@ -2,7 +2,7 @@
 
 #include <GL/glew.h>
 
-#define ASSERT(x) if(!(x)) asm("int3");
+#define ASSERT(x) if(!(x)) __debugbreak();
 
 #define GLCall(x) GlClearError();\
     x;\

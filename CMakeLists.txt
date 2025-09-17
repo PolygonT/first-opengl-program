@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 project(first-opengl-program)
 
-# find_package(glfw3 3.4 REQUIRED)
-# find_package(GLEW REQUIRED)
-# find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(OpenGL REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_DEBUG "/Z7")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ===============source files=================
 file(GLOB_RECURSE ALL_SOURCE_FILES src/*.cpp src/*.h)
@@ -29,16 +30,15 @@ endforeach()
 add_executable(Hello ${ALL_SOURCE_FILES})
 target_link_libraries(Hello
     PUBLIC
-        GLEW
-        glfw3
-        OpenGL
+        GLEW::GLEW
+        glfw
+        OpenGL::GL
     PRIVATE
         glm::glm-header-only
 )
 
 target_include_directories(Hello 
     PUBLIC 
-        src 
         ${SUBDIRECTORIES}
 )
 
