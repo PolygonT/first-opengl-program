@@ -12,6 +12,7 @@
 Camera::Camera(int width, int height, glm::vec3 position)
 : m_Width(width), m_Height(height), m_Position(position)
 {
+
 }
 
 glm::mat4 Camera::camMatrix(float fov, float zNear, float zFar, Shader &shader) {
@@ -42,8 +43,14 @@ void Camera::HandleInputs(GLFWwindow *window, float deltaSeconds) {
     float x = m_Sensitivity * ((xPos - m_Width / 2.0) / m_Width);
     float y = m_Sensitivity * ((yPos - m_Height / 2.0) / m_Height);
 
-    m_Orientation = glm::rotate(m_Orientation, glm::radians(-y), glm::normalize(glm::cross(m_Orientation, m_Up)));
-    m_Orientation = glm::rotate(m_Orientation, glm::radians(-x), m_Up);
+    if (x != 0.f || y != 0.f) {
+        std::cout << "x Pos " << x << ", yPos " << y << std::endl;
+    }
+
+    // 移动y，绕x轴旋转
+    // m_Orientation = glm::rotate(m_Orientation, glm::radians(-y), glm::normalize(glm::cross(m_Orientation, m_Up)));
+    // 移动x，绕y轴旋转
+    // m_Orientation = glm::rotate(m_Orientation, glm::radians(-x), m_Up);
 
     glfwSetCursorPos(window, m_Width / 2.0, m_Height / 2.0);
 
@@ -70,5 +77,4 @@ void Camera::HandleInputs(GLFWwindow *window, float deltaSeconds) {
 }
 
 
-    // std::cout << "x Pos " << x << ", yPos " << y << std::endl;
 

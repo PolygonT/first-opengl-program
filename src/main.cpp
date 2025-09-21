@@ -5,6 +5,7 @@
 
 #include <iostream>
 
+#include "GltfModel.h"
 #include "Macros.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
@@ -14,6 +15,45 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "Camera.h"
+
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+
+void drawMesh(const std::map<int, GLuint>& vbos,
+              tinygltf::Model &model, tinygltf::Mesh &mesh) {
+  for (size_t i = 0; i < mesh.primitives.size(); ++i) {
+    tinygltf::Primitive primitive = mesh.primitives[i];
+    tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
+
+    glDrawElements(primitive.mode, indexAccessor.count,
+                   indexAccessor.componentType,
+                   BUFFER_OFFSET(indexAccessor.byteOffset));
+  }
+}
+
+// recursively draw node and children nodes of model
+void drawModelNodes(const std::pair<GLuint, std::map<int, GLuint>>& vaoAndEbos,
+                    tinygltf::Model &model, tinygltf::Node &node) {
+  if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
+    drawMesh(vaoAndEbos.second, model, model.meshes[node.mesh]);
+  }
+  for (size_t i = 0; i < node.children.size(); i++) {
+    drawModelNodes(vaoAndEbos, model, model.nodes[node.children[i]]);
+  }
+}
+void drawModel(const std::pair<GLuint, std::map<int, GLuint>>& vaoAndEbos,
+               tinygltf::Model &model) {
+  glBindVertexArray(vaoAndEbos.first);
+
+  const tinygltf::Scene &scene = model.scenes[model.defaultScene];
+  for (size_t i = 0; i < scene.nodes.size(); ++i) {
+    drawModelNodes(vaoAndEbos, model, model.nodes[scene.nodes[i]]);
+  }
+
+  glBindVertexArray(0);
+}
+
 
 int main(void)
 {
@@ -52,20 +92,20 @@ int main(void)
 
     float positions[] {
         //     COORDS          /         TexCoords      /       Colors
-        -0.5f, 0.0f, -0.5f, 1.0f,       0.0f, 0.0f,         1.0f, 0.0f, 0.0f, 1.0f,
-        -0.5f, 0.0f,  0.5f, 1.0f,       5.0f, 0.0f,         0.0f, 1.0f, 0.0f, 1.0f,
-         0.5f, 0.0f,  0.5f, 1.0f,       0.0f, 0.0f,         0.0f, 0.0f, 1.0f, 1.0f,
-         0.5f, 0.0f, -0.5f, 1.0f,       5.0f, 0.0f,         0.3f, 0.8f, 0.2f, 1.0f,
-         0.0f, 0.8f,  0.0f, 1.0f,       2.5f, 5.0f,         1.0f, 1.0f, 1.0f, 1.0f
+        -0.5f, 0.0f, -0.5f,        0.0f, 0.0f,         1.0f, 0.0f, 0.0f, 1.0f,
+        -0.5f, 0.0f,  0.5f,        5.0f, 0.0f,         0.0f, 1.0f, 0.0f, 1.0f,
+         0.5f, 0.0f,  0.5f,        0.0f, 0.0f,         0.0f, 0.0f, 1.0f, 1.0f,
+         0.5f, 0.0f, -0.5f,        5.0f, 0.0f,         0.3f, 0.8f, 0.2f, 1.0f,
+         0.0f, 0.8f,  0.0f,        2.5f, 5.0f,         1.0f, 1.0f, 1.0f, 1.0f
     };
 
     unsigned int indicies[] {
         0, 1, 2,
         0, 2, 3,
-        0, 1, 4,
-        1, 2, 4,
-        2, 3, 4,
-        0, 3, 4
+        0, 4, 1,
+        1, 4, 2,
+        2, 4, 3,
+        3, 4, 0
     };
 
     // blend mode
@@ -73,12 +113,12 @@ int main(void)
     GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
     VertexArray va;
-    VertexBuffer vb {positions, 10 * 5 * sizeof(float)};
+    VertexBuffer vb {positions, 9 * 5 * sizeof(float)};
     IndexBuffer ib {indicies, 6 * 3};
 
     VertexBufferLayout layout;
     // vertices
-    layout.Push<float>(4);
+    layout.Push<float>(3);
     // tex coord
     layout.Push<float>(2);
     // vertices color
@@ -88,10 +128,13 @@ int main(void)
     Shader shader { "res/shaders/Basic.shader" };
     shader.Bind();
 
-    Texture texture { "res/textures/brick.png" };
-    texture.Bind();
-    
-    shader.SetUniform1i("u_Texture", 0);
+    Shader simpleShader { "res/shaders/Simple.shader" };
+    simpleShader.Bind();
+
+    // Texture texture { "res/textures/brick.png" };
+    // texture.Bind();
+    // 
+    // shader.SetUniform1i("u_Texture", 0);
 
     Renderer renderer;
     Camera camera {width, height, {0.0f, 0.2f, 2.0f}};
@@ -109,6 +152,11 @@ int main(void)
     float targetSecPerFrame = 1.f / targetFPS;
 
 
+    GltfModel gltfModel {"res/model/practice.gltf"};
+    std::pair<GLuint, std::map<int, GLuint>> vaoAndEbos = gltfModel.BindModel();
+
+    // gltfModel.UnBind();
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -120,12 +168,11 @@ int main(void)
         // GLCall(glClear(GL_COLOR_BUFFER_BIT));
         renderer.Clear();
 
-        shader.Bind();
+        simpleShader.Bind();
+        // std::cout << 1.f / deltaSeconds << std::endl;
 
-        std::cout << 1.f / deltaSeconds << std::endl;
-
-        // glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 model(1.f);
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+        // glm::mat4 model(1.f);
         
         camera.HandleInputs(window, deltaSeconds);
         glm::mat4 camMatrix = camera.camMatrix(glm::radians(45.f), 0.1f, 100.f, shader);
@@ -138,7 +185,10 @@ int main(void)
             angle = 0.f;
         }
 
-        renderer.Draw(va, ib, shader);
+        // renderer.Draw(va, ib, shader);
+        // renderer.Draw(gltfModel, simpleShader);
+        drawModel(vaoAndEbos, gltfModel.m_Model);
+
 
         /* Swap front and back buffers */
         GLCall(glfwSwapBuffers(window));
@@ -150,3 +200,4 @@ int main(void)
     glfwTerminate();
     return 0;
 }
+

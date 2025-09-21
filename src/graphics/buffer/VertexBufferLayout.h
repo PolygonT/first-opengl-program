@@ -9,6 +9,8 @@ struct VertexBufferLayoutElement {
     unsigned int type; // 数据类型
     unsigned int count; // 一个vertex有多少个元素
     unsigned char normalized; // ?
+    int vaa;
+    long offset;
 
     static unsigned int GetSizeOfType(unsigned int type) {
         switch (type) {
@@ -37,5 +39,8 @@ public:
 
     template<typename T>
     void Push(unsigned int count);
+
+    void PushElement(unsigned int type, unsigned int count, bool normalized,
+                     int vaa, long offset, unsigned int stride);
 };
 

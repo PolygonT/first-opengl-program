@@ -2,7 +2,14 @@
 
 #include <GL/glew.h>
 
+#ifdef WIN32
+   // code for Windows systems
 #define ASSERT(x) if(!(x)) __debugbreak();
+#else
+   // code for other systems
+#define ASSERT(x) if(!(x)) asm("int3");
+
+#endif
 
 #define GLCall(x) GlClearError();\
     x;\

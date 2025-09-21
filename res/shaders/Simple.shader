@@ -2,8 +2,9 @@
 #version 330 core
 
 layout(location = 0) in vec3 position;
-layout(location = 1) in vec2 texCoord;
-layout(location = 2) in vec4 color;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 texCoord;
+// layout(location = 2) in vec4 color;
 
 out vec2 v_TexCoord;
 out vec4 v_Color;
@@ -14,7 +15,7 @@ void main()
 {
     gl_Position = u_Mvp * vec4(position, 1.0f);
     v_TexCoord = texCoord;
-    v_Color = color;
+    v_Color = vec4(1.f, 0.f, 0.f, 1.f);
 }
 
 #shader fragment
@@ -31,7 +32,8 @@ uniform sampler2D u_Texture;
 void main()
 {
     vec4 texColor = texture(u_Texture, v_TexCoord);
-    color = texColor;
+    // color = texColor;
     // color = u_Color;
-    // color = v_Color;
+    color = v_Color;
 }
+
