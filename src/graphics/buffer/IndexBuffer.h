@@ -3,6 +3,7 @@
 class IndexBuffer {
 private:
     unsigned int m_RendererID;
+    // TODO delete count
     unsigned int m_Count;
 public:
     IndexBuffer(const void* data, unsigned int count);

@@ -7,27 +7,31 @@
 
 
 #include "VertexArray.h"
-#include "GltfMesh.h"
+#include "VertexBuffer.h"
+#include "Texture.h"
+
+struct ModelView {
+    std::map<int, VertexArray>* vaMap {nullptr};
+    std::map<int, VertexBuffer>* vbMap {nullptr};
+    std::map<int, Texture>* texMap {nullptr};
+};
 
 class GltfModel {
 private:
-    VertexArray m_Va;
-    std::vector<GltfMesh> m_Meshs;
-    unsigned int m_RendererID;
+    std::map<int, VertexArray> m_Vas;
+    std::map<int, VertexBuffer> m_Vbs;
+    std::map<int, Texture> m_Texs;
 
 public:
     tinygltf::Model m_Model;
     GltfModel(const std::string& filename);
     ~GltfModel() = default;
 
-    std::pair<GLuint, std::map<int, GLuint>> BindModel();
+    ModelView BindModel();
     void Bind();
     void UnBind();
 
-    inline VertexArray& GetVertexArray() { return m_Va; }
-    inline std::vector<GltfMesh> GetMeshs() { return m_Meshs; }
-
 private:
-    void BindMesh(std::map<int, GLuint>& vbos, VertexArray& va, tinygltf::Mesh& mesh);
-    void BindModelNodes(std::map<int, GLuint>& vbos, VertexArray& va, tinygltf::Node &node);
+    void BindMesh(tinygltf::Mesh& mesh);
+    void BindModelNodes(tinygltf::Node &node);
 };

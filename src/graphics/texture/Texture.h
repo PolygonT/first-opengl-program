@@ -9,15 +9,26 @@ private:
     unsigned char* m_LocalBuffer;
     int m_Width, m_Height, m_BPP;
 
+    bool _moved {false};
+
 public:
-    Texture(const std::string &path);
-    ~Texture();
+  Texture(const std::string &path);
+  Texture(unsigned char *buffer, int width, int height, int bpp);
 
-    void Bind(unsigned int slot = 0);
-    void UnBind();
+  Texture(const Texture &) = delete;
+  Texture(Texture &&);
 
-    inline int GetWidth() const { return m_Width; }
-    inline int GetHeight() const { return m_Height; }
+  Texture &operator=(const Texture &) = delete;
+  Texture &operator=(Texture &&) = default;
 
+  ~Texture();
 
+  void Bind(unsigned int slot = 0);
+  void UnBind();
+
+  inline int GetWidth() const { return m_Width; }
+  inline int GetHeight() const { return m_Height; }
+
+private:
+    void CreateTexture();
 };

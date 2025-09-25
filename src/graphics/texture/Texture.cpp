@@ -8,6 +8,31 @@ Texture::Texture(const std::string &path) :
     stbi_set_flip_vertically_on_load(1);
     m_LocalBuffer = stbi_load(path.c_str(), &m_Width, &m_Height, &m_BPP, 4);
 
+    CreateTexture();
+
+    if (m_LocalBuffer) {
+        stbi_image_free(m_LocalBuffer);
+    }
+}
+
+Texture::Texture(unsigned char *buffer, int width, int height, int bpp) :
+    m_RendererID(0), m_Filepath(""), m_LocalBuffer(buffer), m_Width(width), m_Height(height), m_BPP(bpp){
+
+    CreateTexture();
+}
+
+Texture::Texture(Texture &&Other) {
+    m_RendererID = Other.m_RendererID;
+    m_Filepath = Other.m_Filepath;
+    m_LocalBuffer = Other.m_LocalBuffer;
+    m_Width = Other.m_Width;
+    m_Height = Other.m_Height;
+    m_BPP = Other.m_BPP;
+
+    Other._moved = true;
+}
+
+void Texture::CreateTexture() {
     GLCall(glGenTextures(1, &m_RendererID));
     GLCall(glBindTexture(GL_TEXTURE_2D, m_RendererID));
 
@@ -21,14 +46,13 @@ Texture::Texture(const std::string &path) :
     GLCall(glGenerateMipmap(GL_TEXTURE_2D));
 
     GLCall(glBindTexture(GL_TEXTURE_2D, 0));
-
-    if (m_LocalBuffer) {
-        stbi_image_free(m_LocalBuffer);
-    }
 }
 
+
 Texture::~Texture() {
-    GLCall(glDeleteTextures(1, &m_RendererID));
+    if (!_moved) {
+        GLCall(glDeleteTextures(1, &m_RendererID));
+    }
 }
 
 void Texture::Bind(unsigned int slot) {

@@ -28,17 +28,17 @@ void Renderer::Draw(const VertexArray &va, const IndexBuffer ib,
 }
 
 void Renderer::Draw(GltfModel &model, const Shader &shader) {
-    shader.Bind();
-
-    VertexArray &va = model.GetVertexArray();
-    va.Bind();
-
-    for(auto& mesh : model.GetMeshs()) {
-        IndexBuffer& ib = mesh.GetIndexBuffer();
-        ib.Bind();
-
-        GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_SHORT, nullptr));
-    }
+    // shader.Bind();
+    //
+    // VertexArray &va = model.GetVertexArray();
+    // va.Bind();
+    //
+    // for(auto& mesh : model.GetMeshs()) {
+    //     IndexBuffer& ib = mesh.GetIndexBuffer();
+    //     ib.Bind();
+    //
+    //     GLCall(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_SHORT, nullptr));
+    // }
 
 }
 

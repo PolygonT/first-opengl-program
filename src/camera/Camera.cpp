@@ -15,6 +15,7 @@ Camera::Camera(int width, int height, glm::vec3 position)
 
 }
 
+// TODO remove shader ?
 glm::mat4 Camera::camMatrix(float fov, float zNear, float zFar, Shader &shader) {
     glm::mat4 view(1.0f);
     glm::mat4 projection(1.0f);

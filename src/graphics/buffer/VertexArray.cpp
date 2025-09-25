@@ -10,7 +10,14 @@ VertexArray::VertexArray() {
 }
 
 VertexArray::~VertexArray() {
-    GLCall(glDeleteVertexArrays(1, &m_RendererID))
+    if (!_moved) {
+        GLCall(glDeleteVertexArrays(1, &m_RendererID))
+    }
+}
+
+VertexArray::VertexArray(VertexArray&& Other) {
+    this->m_RendererID = Other.m_RendererID;
+    Other._moved = true;
 }
 
 // template<typename T>
@@ -40,12 +47,9 @@ void VertexArray::AddBuffer(const VertexBuffer &vb,
     }
 }
 
-void VertexArray::AddBuffer(unsigned int rendererID,
-                            const VertexBufferLayout &layout) {
+void VertexArray::AddBuffer(const VertexBufferLayout &layout) {
     // TODO dup bind ?
     Bind();
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, rendererID));
-
     const auto elements = layout.GetElements();
     for (unsigned int i = 0; i < elements.size(); i++) {
         const auto element = elements[i];
@@ -64,5 +68,4 @@ void VertexArray::Bind() const {
 void VertexArray::UnBind() const {
     GLCall(glBindVertexArray(0));
 }
-
 
